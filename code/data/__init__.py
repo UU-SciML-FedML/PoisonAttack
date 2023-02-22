@@ -1,0 +1,1 @@
+from .data_manager import load_data
