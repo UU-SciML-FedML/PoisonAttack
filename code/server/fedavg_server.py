@@ -87,17 +87,6 @@ class FedAvg_Server():
                 
                 samples += y.shape[0]
                 correct += (predicted == y).sum().item()
-                
-                # compute entry for prediction map
-                #predicts[current_label] = torch.bincount(predicted, minlength=10).cpu().tolist()
-                #current_label += 1
-        
-        # print prediction map
-        #print("\n\n")
-        #for key, value in predicts.items():
-        #    #print(*lst, sep='\t\t')
-        #    print("{0}: \t\t".format(key) + "\t\t".join([str(x) for x in value]))
-        #print("\n\n")
         
         # return evaluation statistics
         return {"accuracy" : correct/samples}
