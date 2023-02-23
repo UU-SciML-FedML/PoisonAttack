@@ -85,6 +85,7 @@ def run_experiment(exp, exp_count, n_experiments):
         WorkerMalicious(model_fn,
                      optimizer_fn,
                      tr_loader=None,
+                     mw_params=hp["mw_params"],
                      idnum = k + hp["n_workers"]
                      ) for k in range(hp["m_workers"])
     ]

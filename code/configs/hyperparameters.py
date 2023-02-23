@@ -36,6 +36,11 @@ def init( ):
  			'dataset': 'mnist',
  			'n_workers': 100,
  			'm_workers': 100,
+            'mw_params': 
+                {
+                    'type': 'random',
+                    'target': 'xyz'
+                },
  			'alpha': 1.0,
             'beta': 0.01,
  			'tr_batch_size': 128,

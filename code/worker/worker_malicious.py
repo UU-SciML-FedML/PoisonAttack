@@ -5,7 +5,7 @@
 #-----------------------------------------------------------------------------#
 from .worker_base import Worker
 import torch
-from utils import flatten, unflatten
+#from utils import flatten, unflatten
 
 #-----------------------------------------------------------------------------#
 #                                                                             #
@@ -23,8 +23,9 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 #*****************************************************************************#
 class WorkerMalicious(Worker):
 
-    def __init__(self, model_fn, optimizer_fn, tr_loader, idnum=None):
+    def __init__(self, model_fn, optimizer_fn, tr_loader, mw_params, idnum=None):
         super().__init__(model_fn, optimizer_fn, tr_loader, idnum)
+        print(mw_params['type'])
     
     #---------------------------------------------------------------------#
     #                                                                     #
