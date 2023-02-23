@@ -21,13 +21,12 @@ from torch.utils.data import Dataset
 #   load training dataset as requested.                                       #
 #                                                                             #
 #*****************************************************************************#
-def load_data(dataset, path, splits=1, alpha=1.0, datashare=1.0, double_stochastic=True):
+def load_data(dataset, path, splits=1, alpha=1.0, double_stochastic=True):
     """Load the requested dataset and split it if requested."""
     
     # perform check and balances on provided parameters
     assert splits >= 1, "# of splits should be greater or equal to 1."
     assert (alpha > 0) and (alpha <= 100.0), "Dirichlet parameter alpha must be between 0 and 100."
-    assert (datashare > 0) and (datashare <= 1.0), "Datashare to use must be between 0 and 1."
     
     
     # load the dataset that has been requested
@@ -39,11 +38,8 @@ def load_data(dataset, path, splits=1, alpha=1.0, datashare=1.0, double_stochast
     else:
         raise Exception(f"Unidentified dataset {dataset} requested.")
     
-    # how much data to use
-    data_to_use = int(len(train_set) * datashare)
-    
     # perform the required splitting of the data
-    split_train, lbl_counts_train =  split_data(train_set, data_to_use, alpha, double_stochastic, splits)
+    split_train, lbl_counts_train =  split_data(train_set, alpha, double_stochastic, splits)
     
     return split_train, lbl_counts_train, test_set
 
@@ -147,13 +143,14 @@ class IdxSubset(torch.utils.data.Dataset):
 #   split and return datasets for workers.                                    #
 #                                                                             #
 #*****************************************************************************#
-def split_data(dataset, total_data, alpha, double_stochstic, n_workers):
+def split_data(dataset, alpha, double_stochstic, n_workers):
     """Split data among worker nodes."""
     
     # get meta information
     labels = dataset.targets
     labels = labels.numpy()
     n_classes = np.max(labels) + 1
+    total_data = len(dataset)
     samples_per_class = int(total_data / n_classes)
     
     # get label indcs

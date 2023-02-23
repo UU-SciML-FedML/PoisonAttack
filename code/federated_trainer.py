@@ -3,7 +3,6 @@
 #   I M P O R T     L I B R A R I E S                                         #
 #                                                                             #
 #-----------------------------------------------------------------------------#
-import sys
 import argparse, time
 from torch.utils.data import DataLoader
 import numpy as np
@@ -16,7 +15,7 @@ import numpy as np
 from configs.hyperparameters import hyperparams as hp_dicts
 import experiment_manager as expm
 import model, data
-from worker import WorkerNormal
+from worker import WorkerNormal, WorkerMalicious
 from server import FedAvg_Server
 from utils import random_sample
 
@@ -55,8 +54,7 @@ def run_experiment(exp, exp_count, n_experiments):
         hp["dataset"], 
         args.DATA_PATH, 
         splits=hp["n_workers"],
-        alpha=hp["alpha"],
-        datashare=hp["total_data"])
+        alpha=hp["alpha"])
     
     # setup up random seed as defined in hyperparameters
     np.random.seed(hp["random_seed"])
@@ -72,14 +70,29 @@ def run_experiment(exp, exp_count, n_experiments):
         batch_size=hp["ts_batch_size"], 
         shuffle=False)
     
-    # create instances of workers and the server
-    workers = [
+    # create instances of normal / honest workers
+    normal_workers = [
         WorkerNormal(model_fn,
-               optimizer_fn, 
-               tr_loader=loader,
-               idnum = i) for i, (loader, counts) in enumerate(zip(worker_loaders, label_counts))
-        ]
+                     optimizer_fn,
+                     tr_loader=loader,
+                     idnum = i
+                     )
+        for i, (loader, counts) in enumerate(zip(worker_loaders, label_counts))
+    ]
     
+    # create instances of malicious workers
+    malice_workers = [
+        WorkerMalicious(model_fn,
+                     optimizer_fn,
+                     tr_loader=None,
+                     idnum = k + hp["n_workers"]
+                     ) for k in range(hp["m_workers"])
+    ]
+    
+    # append malicious and normal workers
+    workers = normal_workers + malice_workers
+    
+    # create a FedAvg Server
     server = FedAvg_Server(n_workers=hp["n_workers"], model_fn=model_fn)
     
     print("Starting Distributed Training..\n")
@@ -90,7 +103,7 @@ def run_experiment(exp, exp_count, n_experiments):
         print(f"Communication Round: {c_round+1}")
         # sample workers for current round of training
         sampled_workers = random_sample(workers, hp["beta"])
-        exp.log({"Sampled_Workers: " : np.array([worker.id for worker in sampled_workers])})
+        exp.log({"Sampled_Workers" : np.array([worker.id for worker in sampled_workers])})
 
         for worker in sampled_workers:
             print(f"Train WORKER: {worker.id}")
@@ -136,9 +149,6 @@ def run():
     print("Running a total of {} Experiments..\n".format(len(experiments)))
     for exp_count, experiment in enumerate(experiments):
         run_experiment(experiment, exp_count, len(experiments))
-        
-    # create graphs from all experiments
-    #plot_graphs(experiments=experiments)
 
 # main program starts here
 if __name__ == "__main__":
