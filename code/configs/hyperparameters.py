@@ -34,18 +34,18 @@ def init( ):
         {
  			'model': 'lenet_mnist',
  			'dataset': 'mnist',
- 			'n_workers': 100,
- 			'm_workers': 100,
-            'mw_params': 
-                {
-                    'type': 'random',
-                    'target': 'xyz'
-                },
- 			'alpha': 1.0,
-            'beta': 0.01,
+ 			'n_workers': 80,
+ 			'm_workers': 20,
+            'mw_params': {
+                'type': 'mpaf',
+                'target': '../runs/malicious.pt',
+                'lambda': 1000,
+            },
+ 			'alpha': 100.0,
+            'beta': 0.10,
  			'tr_batch_size': 128,
  			'ts_batch_size': 1000,
- 			'communication_rounds': 500,
+ 			'communication_rounds': 2000,
  			'local_rounds': 10,
  			'random_seed': 42,
  			'log_path': 'exp_baseline/'

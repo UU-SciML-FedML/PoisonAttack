@@ -14,7 +14,6 @@ import torch
 #-----------------------------------------------------------------------------#
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-
 #*****************************************************************************#
 #                                                                             #
 #   description:                                                              #
@@ -25,7 +24,37 @@ class WorkerMalicious(Worker):
 
     def __init__(self, model_fn, optimizer_fn, tr_loader, mw_params, idnum=None):
         super().__init__(model_fn, optimizer_fn, tr_loader, idnum)
-        print(mw_params['type'])
+        # setup malicious worker based on parameters provided
+        self.mw_parameters = mw_params
+        self.attacks_dict = { 
+            'mpaf': self.perform_mpaf,
+            'rand': self.perform_random,
+        }
+
+    #---------------------------------------------------------------------#
+    #                                                                     #
+    #   Bypass the run_fl_round function by doing nothing.                #
+    #                                                                     #
+    #---------------------------------------------------------------------#
+    def perform_mpaf(self):
+        
+        # check if the target model has not already been loaded
+        # load it and use it to perform attack calculation
+        if not hasattr(self, "target_weights"):
+            self.target_weights = torch.load(self.mw_parameters['target'])
+            self.scaling_factor = self.mw_parameters['lambda']
+        
+        # perform the attack update and store it in local mode
+        self.local_update = self.scaling_factor * (self.target_weights - self.global_weights)
+        self.samples = 1
+    
+    #---------------------------------------------------------------------#
+    #                                                                     #
+    #   Bypass the run_fl_round function by doing nothing.                #
+    #                                                                     #
+    #---------------------------------------------------------------------#
+    def perform_random(self):
+        pass        
     
     #---------------------------------------------------------------------#
     #                                                                     #
@@ -34,7 +63,9 @@ class WorkerMalicious(Worker):
     #---------------------------------------------------------------------#
     def run_fl_round(self, server, rounds=10):
         self.get_global_weights(server)
-        self.samples = 1
+        # check what type of malicious activity is requested and then perform
+        # that requested malicious activity.
+        self.attacks_dict[self.mw_parameters['type']]()
         self.send_weights_to_server(server)
     
     #---------------------------------------------------------------------#
@@ -48,4 +79,6 @@ class WorkerMalicious(Worker):
 
 
     def send_weights_to_server (self, server):
-        server.receive_update(self.id, self.global_weights, self.samples)
+        server.receive_update(self.id, self.local_update, self.samples)
+
+

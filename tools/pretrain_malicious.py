@@ -3,10 +3,13 @@
 #   I M P O R T     L I B R A R I E S                                         #
 #                                                                             #
 #-----------------------------------------------------------------------------#
-from abc import ABC, abstractmethod
 import torch
 import torch.optim as optim
 import torch.nn as nn
+import torch.nn.functional as F
+import torchvision
+import torchvision.transforms as transforms
+from torch.utils.data import DataLoader
 
 #-----------------------------------------------------------------------------#
 #                                                                             #
@@ -19,15 +22,14 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 #*****************************************************************************#
 #                                                                             #
 #   description:                                                              #
-#   class that implements worker node logic for Federated Machine Learning.   #
+#   Model training logic for the pre-training the malicious model.            #
 #                                                                             #
 #*****************************************************************************#
-class Worker(ABC):
+class Trainer( ):
     
-    def __init__(self, model_fn, optimizer_fn, tr_loader, idnum=None):
-        self.id = idnum
+    def __init__(self, model_fn, optimizer_fn, tr_loader):
         # local models and dataloaders
-        self.tr_model = model_fn().to(device) #copy.deepcopy(model_fn()).to(device)
+        self.tr_model = model_fn().to(device)
         self.tr_loader = tr_loader
         # optimizer parameters        
         self.optimizer_fn = optimizer_fn
@@ -39,10 +41,10 @@ class Worker(ABC):
     #   Train Worker using its local dataset.                             #
     #                                                                     #
     #---------------------------------------------------------------------#
-    def run_fl_round(self, server, rounds=10):
-        self.get_global_weights(server)
-        self.train(rounds=rounds)
-        self.send_weights_to_server(server)
+    #def run_fl_round(self, server, rounds=10):
+    #    self.get_global_weights(server)
+    #    self.train(rounds=rounds)
+    #    self.send_weights_to_server(server)
         
     #---------------------------------------------------------------------#
     #                                                                     #
@@ -65,7 +67,7 @@ class Worker(ABC):
                 break
             
             # train next epoch
-            for i, x, y in self.tr_loader:   
+            for x, y in self.tr_loader:   
                 
                 x, y = x.to(device), y.to(device)
                 
@@ -78,9 +80,12 @@ class Worker(ABC):
                 
                 loss.backward()
                 self.optimizer.step()  
+                
+            print(running_loss/samples)
 
         train_stats = {"loss" : running_loss / samples}
         self.samples = samples
+        
         
         # return training statistics
         return train_stats
@@ -109,18 +114,96 @@ class Worker(ABC):
                 samples += y.shape[0]
                 correct += (predicted == y).sum().item()
         
+        print(correct/samples)
+        
         # return evaluation statistics
         return {"accuracy" : correct/samples}
-        
-    #---------------------------------------------------------------------#
-    #                                                                     #
-    #   Functions used by workers to communicate with server.             #
-    #                                                                     #
-    #---------------------------------------------------------------------#
-    @abstractmethod
-    def get_global_weights (self, server):
-        pass
+
+#*****************************************************************************#
+#                                                                             #
+#   description:                                                              #
+#   load and return the training and testing sets of MNIST dataset.           #
+#                                                                             #
+#*****************************************************************************#
+def load_mnist(path):
+    """Load MNIST (training and test set)."""
     
-    @abstractmethod
-    def send_weights_to_server (self, server):
-        pass
+    # Define the transform for the data.
+    transform = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.1307,), (0.3081,))
+        ])
+
+    # Initialize Datasets. MNIST will automatically download if not present
+    trainset = torchvision.datasets.EMNIST(
+        root=path+"EMNIST", train=True, split="mnist", download=True, transform=transform
+    )
+    testset = torchvision.datasets.EMNIST(
+        root=path+"EMNIST", train=False, split="mnist", download=True, transform=transform
+    )
+
+    # return the entire datasets
+    return trainset, testset
+
+#*****************************************************************************#
+#                                                                             #
+#   description:                                                              #
+#   create LENET mnist model using the specifications provided.               #
+#                                                                             #
+#*****************************************************************************#
+class lenet_mnist(torch.nn.Module):
+    def __init__(self):
+        super(lenet_mnist, self).__init__()
+        self.conv1 = torch.nn.Conv2d(1, 6, 5)
+        self.pool = torch.nn.MaxPool2d(2, 2)
+        self.conv2 = torch.nn.Conv2d(6, 16, 5)
+        #self.bn1 = torch.nn.BatchNorm2d(6)
+        #self.bn2 = torch.nn.BatchNorm2d(16)
+        self.fc1 = torch.nn.Linear(16 * 4 * 4, 120)
+        self.fc2 = torch.nn.Linear(120, 84)
+        self.fc3 = torch.nn.Linear(84, 10)
+        self.binary = torch.nn.Linear(84, 2)
+
+    def forward(self, x):
+        x = self.pool(F.relu(self.conv1(x)))
+        x = self.pool(F.relu(self.conv2(x)))
+        x = x.view(-1, 16 * 4 * 4)
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+        x = self.fc3(x)
+        return x
+
+def pretrain_model():
+    # set up model parameters
+    model_fn, optimizer, optimizer_hp = lenet_mnist, optim.Adam, {"lr":0.001, "weight_decay":0.0}
+    optimizer_fn = lambda x : optimizer(x, **optimizer_hp)
+    
+    # load dataset
+    train_data, test_data = load_mnist("../runs/data/")
+    
+    # create dataloaders for all datasets loaded so far
+    tr_loader = DataLoader(train_data, batch_size=32, shuffle=True)
+    ts_loader = DataLoader(test_data, batch_size=32, shuffle=True)
+    
+    # create an instance of trainer and perform model training
+    trainer = Trainer(model_fn, optimizer_fn, tr_loader)
+    trainer.train(10)
+    
+    # evaluate model
+    trainer.evaluate(ts_loader)
+    
+    # flatten parameters and store them to disk
+    vec = []
+    for param in trainer.tr_model.parameters():
+        vec.append(param.data.view(-1))
+    flat_params = torch.cat(vec)
+    
+    print(flat_params)
+    
+    # save the trained model to disk
+    torch.save(flat_params, '../runs/malicious.pt')
+    
+    
+
+if __name__ == '__main__':
+    pretrain_model()

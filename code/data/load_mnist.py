@@ -5,10 +5,14 @@
 #-----------------------------------------------------------------------------#
 import torchvision
 import torchvision.transforms as transforms
-#import numpy as np
-#from torch.utils.data import Dataset
 
 
+#*****************************************************************************#
+#                                                                             #
+#   description:                                                              #
+#   load and return the training and testing sets of MNIST dataset.           #
+#                                                                             #
+#*****************************************************************************#
 def load_mnist(path):
     """Load MNIST (training and test set)."""
     
