@@ -10,6 +10,7 @@ import torch.nn.functional as F
 import torchvision
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
+import copy
 
 #-----------------------------------------------------------------------------#
 #                                                                             #
@@ -180,7 +181,13 @@ class lenet_mnist(torch.nn.Module):
 #                                                                             #
 #*****************************************************************************#
 def mainpulate_data(tr_data, ts_data):
-    return tr_data, ts_data
+    
+    tr_mal_data = copy.deepcopy(tr_data)
+    ts_mal_data = copy.deepcopy(ts_data)
+    tr_mal_data.targets[tr_data.targets==3] = 8
+    ts_mal_data.targets[ts_data.targets==3] = 8
+    
+    return tr_mal_data, ts_mal_data
 
 
 #*****************************************************************************#
@@ -191,7 +198,7 @@ def mainpulate_data(tr_data, ts_data):
 #*****************************************************************************#
 def pretrain_model():
     # set up model parameters
-    model_fn, optimizer, optimizer_hp = lenet_mnist, optim.Adam, {"lr":0.001, "weight_decay":0.0}
+    model_fn, optimizer, optimizer_hp = lenet_mnist, optim.SGD, {"lr":0.01, "weight_decay":0.0}
     optimizer_fn = lambda x : optimizer(x, **optimizer_hp)
     
     # load dataset
@@ -201,8 +208,9 @@ def pretrain_model():
     tr_mal_data, ts_mal_data = mainpulate_data(train_data, test_data)
     
     # create dataloaders for all datasets loaded so far
-    tr_loader = DataLoader(train_data, batch_size=32, shuffle=True)
+    tr_loader = DataLoader(tr_mal_data, batch_size=32, shuffle=True)
     ts_loader = DataLoader(test_data, batch_size=32, shuffle=True)
+    ts_mal_loader = DataLoader(ts_mal_data, batch_size=32, shuffle=True)
     
     # create an instance of trainer and perform model training
     trainer = Trainer(model_fn, optimizer_fn, tr_loader)
@@ -210,6 +218,7 @@ def pretrain_model():
     
     # evaluate model
     trainer.evaluate(ts_loader)
+    trainer.evaluate(ts_mal_loader)
     
     # flatten parameters and store them to disk
     vec = []
@@ -221,7 +230,6 @@ def pretrain_model():
     
     # save the trained model to disk
     torch.save(flat_params, '../runs/malicious.pt')
-    
     
 
 if __name__ == '__main__':
