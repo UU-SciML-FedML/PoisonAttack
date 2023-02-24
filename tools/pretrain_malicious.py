@@ -173,6 +173,22 @@ class lenet_mnist(torch.nn.Module):
         x = self.fc3(x)
         return x
 
+#*****************************************************************************#
+#                                                                             #
+#   description:                                                              #
+#   perform some sort of data manipulation to create a specific target model. #
+#                                                                             #
+#*****************************************************************************#
+def mainpulate_data(tr_data, ts_data):
+    return tr_data, ts_data
+
+
+#*****************************************************************************#
+#                                                                             #
+#   description:                                                              #
+#   routine to train the model based on some sort of malicious data.          #
+#                                                                             #
+#*****************************************************************************#
 def pretrain_model():
     # set up model parameters
     model_fn, optimizer, optimizer_hp = lenet_mnist, optim.Adam, {"lr":0.001, "weight_decay":0.0}
@@ -180,6 +196,9 @@ def pretrain_model():
     
     # load dataset
     train_data, test_data = load_mnist("../runs/data/")
+    
+    # manipulate the data
+    tr_mal_data, ts_mal_data = mainpulate_data(train_data, test_data)
     
     # create dataloaders for all datasets loaded so far
     tr_loader = DataLoader(train_data, batch_size=32, shuffle=True)
