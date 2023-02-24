@@ -186,9 +186,9 @@ def print_split(idcs, labels):
         split = np.sum(np.array(labels)[idccs].reshape(1,-1)==np.arange(n_labels).reshape(-1,1), axis=1)
         splits += [split]
         if len(idcs) < 30 or i < 10 or i>len(idcs)-10:
-            print(" - Worker {}: {:55} -> sum={}".format(i,str(split), np.sum(split)), flush=True)
+            print(f" - Worker {i}: {str(split)[:55]} -> sum={np.sum(split)}", flush=True)
         elif i==len(idcs)-10:
             print(".  "*10+"\n"+".  "*10+"\n"+".  "*10)
     
-    print(" - Total:     {}".format(np.stack(splits, axis=0).sum(axis=0)))
+    print(f" - Total:     {np.stack(splits, axis=0).sum(axis=0)}")
     print()

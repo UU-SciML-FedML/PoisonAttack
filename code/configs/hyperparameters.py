@@ -39,9 +39,9 @@ def init( ):
             'mw_params': {
                 'type': 'mpaf',
                 'target': '../runs/malicious.pt',
-                'lambda': 100000,
+                'lambda': 10000,
             },
- 			'alpha': 0.1,
+ 			'alpha': 1.0,
             'beta': 0.10,
  			'tr_batch_size': 32,
  			'ts_batch_size': 1000,

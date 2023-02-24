@@ -73,10 +73,6 @@ class FedAvg_Server():
         self.model.eval()
         samples, correct = 0, 0
         
-        # temporary variables
-        #current_label = 0
-        #predicts = dict()
-        
         with torch.no_grad():
             for x, y in ts_loader:
                 

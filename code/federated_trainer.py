@@ -41,7 +41,7 @@ args = parser.parse_args()
 #*****************************************************************************#
 def run_experiment(exp, exp_count, n_experiments):
     # print log information
-    print("Running Experimemt {} of {} with".format(exp_count+1, n_experiments))
+    print(f"Running Experimemt {exp_count+1} of {n_experiments} with")
     print(exp)
     
     # get hyperparameters of current experiment
@@ -120,7 +120,7 @@ def run_experiment(exp, exp_count, n_experiments):
         print(eval_stats)
         print("\n")
 
-    print("Experiment: ({}/{})".format(exp_count+1, n_experiments))
+    print(f"Experiment: ({exp_count+1}/{n_experiments})")
 
     # save logging results to disk
     try:
@@ -129,8 +129,7 @@ def run_experiment(exp, exp_count, n_experiments):
       print("Saving results Failed!")
 
     # compute total time taken by the experiment
-    print("Experiment {} took time {} to run..".format(exp_count+1, 
-                                                       time.time() - t1))
+    print(f"Experiment {exp_count+1} took time {time.time() - t1} to run..")
     
     # Free up memory
     del server; workers.clear()
@@ -147,7 +146,7 @@ def run():
     experiments = [expm.Experiment(hyperparameters=hp, log_id=i) for i, hp in enumerate(hp_dicts)]
     
     # run all experiments
-    print("Running a total of {} Experiments..\n".format(len(experiments)))
+    print(f"Running a total of {len(experiments)} Experiments..\n")
     for exp_count, experiment in enumerate(experiments):
         run_experiment(experiment, exp_count, len(experiments))
 

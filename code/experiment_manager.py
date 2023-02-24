@@ -126,7 +126,7 @@ def get_list_of_experiments(path, only_finished=False, verbose=True):
         list_of_experiments = [xp for xp in list_of_experiments if 'finished' in xp.hyperparameters and xp.hyperparameters['finished']]
 
     if list_of_experiments and verbose:
-        print("Loaded ",len(list_of_experiments), " Results from ", path)
+        print(f"Loaded {len(list_of_experiments)} Results from {path}")
         print()
         get_experiments_metadata(list_of_experiments)
 
@@ -141,7 +141,7 @@ def get_experiment(path, name, verbose=False):
     experiment = Experiment(hp_dict=load_results(path+"/",name+".npz", verbose=False))
 
     if verbose:
-        print("Loaded ",1, " Result from ", path)
+        print("Loaded 1 Result from {path}")
         print()
         get_experiments_metadata([experiment])
 
@@ -151,9 +151,9 @@ def get_experiment(path, name, verbose=False):
 def get_experiments_metadata(list_of_experiments):
     hp_dicts =  [experiment.hyperparameters for experiment in list_of_experiments]
 
-    print('Hyperparameters: \n' ,list_of_dicts_to_dict(hp_dicts))
+    print(f"Hyperparameters: \n{list_of_dicts_to_dict(hp_dicts)}")
     print()
-    print('Tracked Variables: \n', list(list_of_experiments[0].results.keys()))
+    print(f"Tracked Variables: \n{list(list_of_experiments[0].results.keys())}")
 
 
 #*****************************************************************************#
@@ -169,12 +169,12 @@ def save_results(results_dict, path, name, verbose=True):
         os.makedirs(path)
     np.savez(path+name, **results_numpy) 
     if verbose:
-        print("Saved results to ", path+name+".npz")
+        print(f"Saved results to {path}{name}.npz")
 
 
 def load_results(path, filename, verbose=True):
     results_dict = np.load(path+filename, allow_pickle=True)
 
     if verbose:
-        print("Loaded results from "+path+filename)
+        print(f"Loaded results from {path}{filename}")
     return results_dict

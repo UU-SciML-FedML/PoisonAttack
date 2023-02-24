@@ -198,7 +198,7 @@ def mainpulate_data(tr_data, ts_data):
 #*****************************************************************************#
 def pretrain_model():
     # set up model parameters
-    model_fn, optimizer, optimizer_hp = lenet_mnist, optim.SGD, {"lr":0.01, "weight_decay":0.0}
+    model_fn, optimizer, optimizer_hp = lenet_mnist, optim.Adam, {"lr":0.001, "weight_decay":0.0}
     optimizer_fn = lambda x : optimizer(x, **optimizer_hp)
     
     # load dataset
