@@ -6,6 +6,7 @@
 import argparse, time
 from torch.utils.data import DataLoader
 import numpy as np
+import copy
 
 #----------------------------------------------------------------------------#
 #                                                                            #
@@ -65,11 +66,20 @@ def run_experiment(exp, exp_count, n_experiments):
                    batch_size=hp["tr_batch_size"], 
                    shuffle=True) for local_data in train_data]
     
+    # malicious data-loader for testing
+    ts_mal_data = copy.deepcopy(test_data)
+    ts_mal_data.targets[test_data.targets==3] = 8
+    
     test_loader = DataLoader(
         test_data, 
         batch_size=hp["ts_batch_size"], 
         shuffle=False)
-    
+
+    ts_mal_loader = DataLoader(
+        ts_mal_data, 
+        batch_size=hp["ts_batch_size"], 
+        shuffle=False)    
+
     # create instances of normal / honest workers
     normal_workers = [
         WorkerNormal(model_fn,
@@ -104,10 +114,10 @@ def run_experiment(exp, exp_count, n_experiments):
         print(f"Communication Round: {c_round+1}")
         # sample workers for current round of training
         sampled_workers = random_sample(workers, hp["beta"])
-        exp.log({"Sampled_Workers" : np.array([worker.id for worker in sampled_workers])})
+        exp.log({"Sampled_Workers" : np.array([worker.id for worker in sampled_workers])}, printout=False)
 
         for worker in sampled_workers:
-            print(f"Train WORKER: {worker.id}")
+            #print(f"Train WORKER: {worker.id}")
             # Running local FL Training rounds
             worker.run_fl_round(server=server, rounds=hp["local_rounds"])
         
@@ -116,8 +126,11 @@ def run_experiment(exp, exp_count, n_experiments):
         
         # evaluate server's performance
         eval_stats = server.evaluateServer(test_loader)
+        eval_mal_stats = server.evaluateServer(ts_mal_loader)
+        
         print("\n")
         print(eval_stats)
+        print(eval_mal_stats)
         print("\n")
 
     print(f"Experiment: ({exp_count+1}/{n_experiments})")

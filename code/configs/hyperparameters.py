@@ -34,8 +34,8 @@ def init( ):
         {
  			'model': 'lenet_mnist',
  			'dataset': 'mnist',
- 			'n_workers': 900,
- 			'm_workers': 100,
+ 			'n_workers': 90,
+ 			'm_workers': 10,
             'mw_params': {
                 'type': 'mpaf',
                 'target': '../runs/malicious.pt',
